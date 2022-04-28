@@ -2,7 +2,7 @@
 #include "assembler.h"
 
 void el0_svc_common_hook(void) {
-    // deal with stack initialization
+    // overwrite stack initialization
     asm volatile("nop\n\t"
           "nop\n\t"
           "nop\n\t"
@@ -19,12 +19,15 @@ void el0_svc_common_hook(void) {
           "nop\n\t"
           "nop\n\t");
 
-    pr_info("debug: el0_svc_common hooked\n");
-    
     asm volatile("mov x12, #0");
+
     asm volatile("ldr x12, =el0_svc_common_ptr");
     asm volatile("ldr x12, [x12]");
-    asm volatile("add x12, x12, #0x30"); // shellcode_size + NOP_OFFSET
+
+    // asm volatile("adrp x12, el0_svc_common_ptr");
+    // asm volatile("ldr x12, [x12, #:lo12:el0_svc_common_ptr]");
+
+    asm volatile("add x12, x12, #0x18"); // shellcode_size + NOP_OFFSET
     asm volatile("blr x12");
 }
 
@@ -47,12 +50,12 @@ int copy_shellcode_sync(void *arg) {
     void *shellcode = generate_shellcode(el0_svc_common_hook_ptr);
     pr_info("debug: shellcode: %*ph\n", SHELLCODE_INS_COUNT * INS_SIZE, shellcode); // not copying full shellcode ?
 
-    memcpy(el0_svc_common_hook_ptr, el0_svc_common_ptr + NOP_OFFSET, SHELLCODE_INS_COUNT * INS_SIZE);
+    memcpy(el0_svc_common_hook_ptr, (uintptr_t) el0_svc_common_ptr + NOP_OFFSET, SHELLCODE_INS_COUNT * INS_SIZE);
     pr_info("debug: copied el0_svc_common_ instructions %*ph\n", 64, el0_svc_common_hook_ptr);
     // https://docs.huihoo.com/doxygen/linux/kernel/3.7/stop__machine_8c.html
     memcpy((uintptr_t) el0_svc_common_ptr + NOP_OFFSET, shellcode, SHELLCODE_INS_COUNT * INS_SIZE);
     vfree(shellcode);
-    pr_info("debug: copied shellcode instructions %*ph\n", 64, el0_svc_common_ptr);
+    pr_info("debug: copied shellcode instructions %*ph", 64, el0_svc_common_ptr);
     return 0;
 }
 

@@ -2,7 +2,7 @@
 #define _HOOK_H_
 
 #define SHELLCODE_INS_COUNT 6
-#define NOP_OFFSET 0x10 // 0x24 nop address
+#define NOP_OFFSET 0x0 // 0x24 nop address
 
 #include <linux/vmalloc.h>
 #include <linux/stop_machine.h>

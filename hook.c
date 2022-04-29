@@ -15,18 +15,19 @@ void __attribute__((naked)) el0_svc_common_hook(void) {
     asm volatile("cmp x0, x12");
     asm volatile("beq redirect_table");
 
+    asm volatile("do_not_redirect_table:")
     asm volatile("ldr x12, =el0_svc_common_ptr");
     asm volatile("ldr x12, [x12]");
 
     // MODIFY THIS MANUALLY WHEN SHELLCODE_INS_COUNT IS CHANGED
     asm volatile("add x12, x12, #0x14"); // SHELLCODE_INS_COUNT * INS_SIZE + NOP_OFFSET
     asm volatile("br x12");
-}
 
-void __attribute__((naked)) redirect_table(void) {
+    asm volatile("redirect_table:")
     asm volatile("ldr x12, =new_sys_call_table_ptr");
     asm volatile("ldr x12, [x12]");
     asm volatile("mov x3, x12");
+    asm volatile("b do_not_redirect_table");
 }
 
 uint32_t *generate_shellcode(uintptr_t el0_svc_common_hook_addr) {

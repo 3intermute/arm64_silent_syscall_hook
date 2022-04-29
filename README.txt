@@ -45,3 +45,4 @@ set_page_flags.c -> translate vaddr to pte, then flip write protect bit
 hook.c -> main hooking code
 copy_sys_call_table.h -> create copy of  sys_call_table
 resolve_kallsyms.c -> use kprobes to find addr of kallsyms_lookup_name, then kallsyms_lookup_name to resolve unexported symbols
+rain_king.h -> hooking library condensed in a single header (why lol) NOT TESTED YET

@@ -13,11 +13,6 @@ MODULE_VERSION("1.0");
 static int __init hook_test_mod_init(void) {
     struct ehh_hook hook;
     hook.number = __NR_mkdirat;
-    hook.orig_table = kallsyms_lookup_name_("sys_call_table");
-    hook.new_table = copy_sys_call_table(hook.orig_table);
-    pr_info("debug: orig_table %i -> %pK, new_table %i -> %pK\n", __NR_mkdirat,
-            ((void **) hook.orig_table)[__NR_mkdirat], __NR_mkdirat,
-            ((void **) hook.new_table)[__NR_mkdirat]);
 
     hook_el0_svc_common(&hook);
 

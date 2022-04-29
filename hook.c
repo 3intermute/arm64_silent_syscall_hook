@@ -1,16 +1,19 @@
 #include "hook.h"
 #include "assembler.h"
 
-void el0_svc_common_hook(void) {
+void __attribute__((naked)) el0_svc_common_hook(void) {
     // stack initialization, 5 instructions exactly will be overwritten, nops just to be safe
     asm volatile("nop\n\t"
+          "nop\n\t"
+          "nop\n\t"
           "nop\n\t"
           "nop\n\t");
     asm volatile("mov x12, #0");
 
-    asm volatile("ldr x12, =new_sys_call_table_ptr");
+    asm volatile("ldr x12, =hooked_syscall_number");
     asm volatile("ldr x12, [x12]");
-    asm volatile("mov x4, x12");
+    asm volatile("cmp x0, x12");
+    asm volatile("beq redirect_table");
 
     asm volatile("ldr x12, =el0_svc_common_ptr");
     asm volatile("ldr x12, [x12]");
@@ -18,6 +21,12 @@ void el0_svc_common_hook(void) {
     // MODIFY THIS MANUALLY WHEN SHELLCODE_INS_COUNT IS CHANGED
     asm volatile("add x12, x12, #0x14"); // SHELLCODE_INS_COUNT * INS_SIZE + NOP_OFFSET
     asm volatile("br x12");
+}
+
+void __attribute__((naked)) redirect_table(void) {
+    asm volatile("ldr x12, =new_sys_call_table_ptr");
+    asm volatile("ldr x12, [x12]");
+    asm volatile("mov x3, x12");
 }
 
 uint32_t *generate_shellcode(uintptr_t el0_svc_common_hook_addr) {
@@ -48,7 +57,14 @@ int copy_shellcode_sync(void *arg) {
 }
 
 void hook_el0_svc_common(struct ehh_hook *hook) {
-    new_sys_call_table_ptr = hook->new_table;
+    orig_table = kallsyms_lookup_name_("sys_call_table");
+    new_table = copy_sys_call_table(hook.orig_table);
+    pr_info("debug: orig_table %i -> %pK, new_table %i -> %pK\n", __NR_mkdirat,
+            ((void **) hook.orig_table)[__NR_mkdirat], __NR_mkdirat,
+            ((void **) hook.new_table)[__NR_mkdirat]);
+    hook->orig_fn = orig_table[hook->number];
+
+    new_sys_call_table_ptr = new_table;
     el0_svc_common_hook_ptr = &el0_svc_common_hook;
     pr_info("debug: el0_svc_common_hook_ptr @ %pK\n", el0_svc_common_hook_ptr);
     el0_svc_common_ptr = kallsyms_lookup_name_("el0_svc_common.constprop.0");
@@ -58,4 +74,6 @@ void hook_el0_svc_common(struct ehh_hook *hook) {
     flush_tlb_all();
 
     stop_machine(copy_shellcode_sync, NULL, NULL);
+
+    new_sys_call_table_ptr[hook->number] = hook->new_fn;
 }

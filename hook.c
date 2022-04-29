@@ -57,12 +57,12 @@ int copy_shellcode_sync(void *arg) {
 }
 
 void hook_el0_svc_common(struct ehh_hook *hook) {
-    orig_table = kallsyms_lookup_name_("sys_call_table");
-    new_table = copy_sys_call_table(hook.orig_table);
+    void **orig_table = kallsyms_lookup_name_("sys_call_table");
+    void **new_table = copy_sys_call_table(orig_table);
     pr_info("debug: orig_table %i -> %pK, new_table %i -> %pK\n", __NR_mkdirat,
-            ((void **) hook.orig_table)[__NR_mkdirat], __NR_mkdirat,
-            ((void **) hook.new_table)[__NR_mkdirat]);
-    hook->orig_fn = orig_table[hook->number];
+            ((void **) orig_table)[__NR_mkdirat], __NR_mkdirat,
+            ((void **) new_table)[__NR_mkdirat]);
+    *((uintptr_t *) hook->orig_fn) = orig_table[hook->number];
 
     new_sys_call_table_ptr = new_table;
     el0_svc_common_hook_ptr = &el0_svc_common_hook;
@@ -75,5 +75,6 @@ void hook_el0_svc_common(struct ehh_hook *hook) {
 
     stop_machine(copy_shellcode_sync, NULL, NULL);
 
-    new_sys_call_table_ptr[hook->number] = hook->new_fn;
+    new_table[hook->number] = hook->new_fn;
+
 }

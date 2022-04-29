@@ -10,10 +10,16 @@ MODULE_LICENSE("GPL");
 MODULE_AUTHOR("0xwillow");
 MODULE_VERSION("1.0");
 
-static int __init hook_test_mod_init(void) {
-    struct ehh_hook hook;
-    hook.number = __NR_mkdirat;
+static asmlinkage int (*orig_kill) (const struct pt_regs *);
 
+asmlinkage int new_kill(const struct pt_regs *regs) {
+    pr_info("debug: hooked kill :D, pid (%i), sig (%i)\n", regs->regs[0], regs->regs[1]);
+    return orig_kill(regs);
+}
+
+static int __init hook_test_mod_init(void) {
+    struct ehh_hook hook = {__NR_kill, new_kill, orig_kill};
+    
     hook_el0_svc_common(&hook);
 
     pr_info("debug: module loaded\n");

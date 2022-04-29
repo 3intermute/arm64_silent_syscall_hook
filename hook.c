@@ -13,7 +13,7 @@ void __attribute__((naked)) el0_svc_common_hook(void) {
     // TODO: parse args passed via stack
     asm volatile("ldr x12, =hooked_syscall_number");
     asm volatile("ldr x12, [x12]");
-    asm volatile("cmp x0, x12");
+    asm volatile("cmp x1, x12");
     asm volatile("beq redirect_table");
 
     asm volatile("do_not_redirect_table:");
@@ -26,8 +26,7 @@ void __attribute__((naked)) el0_svc_common_hook(void) {
 
     asm volatile("redirect_table:");
     asm volatile("ldr x12, =new_sys_call_table_ptr");
-    asm volatile("ldr x12, [x12]");
-    asm volatile("mov x3, x12");
+    asm volatile("ldr x3, [x12]");
     asm volatile("b do_not_redirect_table");
 }
 
@@ -55,6 +54,15 @@ int copy_shellcode_sync(void *arg) {
     memcpy((uintptr_t) el0_svc_common_ptr + NOP_OFFSET, shellcode, SHELLCODE_INS_COUNT * INS_SIZE);
     vfree(shellcode);
     pr_info("debug: copied shellcode instructions %*ph", 64, el0_svc_common_ptr);
+    // max size allowed 64 bytes
+    pr_info("dumping el0_svc_common_ptr: %*ph\n", 64, (uintptr_t) el0_svc_common_ptr + 64);
+    pr_info("dumping el0_svc_common_ptr: %*ph\n", 64, (uintptr_t) el0_svc_common_ptr + 128);
+    pr_info("dumping el0_svc_common_ptr: %*ph\n", 64, (uintptr_t) el0_svc_common_ptr + 192);
+    pr_info("dumping el0_svc_common_ptr: %*ph\n", 64, (uintptr_t) el0_svc_common_ptr + 256);
+    pr_info("dumping el0_svc_common_ptr: %*ph\n", 64, (uintptr_t) el0_svc_common_ptr + 320);
+    pr_info("dumping el0_svc_common_ptr: %*ph\n", 64, (uintptr_t) el0_svc_common_ptr + 384);
+    pr_info("dumping el0_svc_common_ptr: %*ph\n", 64, (uintptr_t) el0_svc_common_ptr + 448);
+    pr_info("dumping el0_svc_common_ptr: %*ph\n", 64, (uintptr_t) el0_svc_common_ptr + 512);
     return 0;
 }
 
@@ -78,4 +86,8 @@ void hook_el0_svc_common(struct ehh_hook *hook) {
     stop_machine(copy_shellcode_sync, NULL, NULL);
 
     new_table[hook->number] = hook->new_fn;
+}
+
+void free_new_sys_call_table( {
+    vfree(new_sys_call_table_ptr);
 }

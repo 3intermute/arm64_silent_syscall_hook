@@ -9,9 +9,9 @@
 #include "resolve_kallsyms.h"
 #include "set_page_flags.h"
 
-static void  *new_sys_call_table_ptr;
-static void  *el0_svc_common_ptr;
-static void  *el0_svc_common_hook_ptr;
+static void __attribute__((used)) *new_sys_call_table_ptr;
+static void __attribute__((used)) *el0_svc_common_ptr;
+static void __attribute__((used)) *el0_svc_common_hook_ptr;
 
 struct ehh_hook {
     int number;

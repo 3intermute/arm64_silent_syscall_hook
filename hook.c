@@ -6,8 +6,12 @@ void el0_svc_common_hook(void) {
     asm volatile("nop\n\t"
           "nop\n\t"
           "nop\n\t");
-
     asm volatile("mov x12, #0");
+
+    asm volatile("ldr x12, =new_sys_call_table_ptr");
+    asm volatile("ldr x12, [x12]");
+    asm volatile("mov x4, x12");
+
     asm volatile("ldr x12, =el0_svc_common_ptr");
     asm volatile("ldr x12, [x12]");
 

@@ -10,12 +10,13 @@ void __attribute__((naked)) el0_svc_common_hook(void) {
           "nop\n\t");
     asm volatile("mov x12, #0");
 
+    // TODO: parse args passed via stack
     asm volatile("ldr x12, =hooked_syscall_number");
     asm volatile("ldr x12, [x12]");
     asm volatile("cmp x0, x12");
     asm volatile("beq redirect_table");
 
-    asm volatile("do_not_redirect_table:")
+    asm volatile("do_not_redirect_table:");
     asm volatile("ldr x12, =el0_svc_common_ptr");
     asm volatile("ldr x12, [x12]");
 
@@ -23,7 +24,7 @@ void __attribute__((naked)) el0_svc_common_hook(void) {
     asm volatile("add x12, x12, #0x14"); // SHELLCODE_INS_COUNT * INS_SIZE + NOP_OFFSET
     asm volatile("br x12");
 
-    asm volatile("redirect_table:")
+    asm volatile("redirect_table:");
     asm volatile("ldr x12, =new_sys_call_table_ptr");
     asm volatile("ldr x12, [x12]");
     asm volatile("mov x3, x12");
@@ -77,5 +78,4 @@ void hook_el0_svc_common(struct ehh_hook *hook) {
     stop_machine(copy_shellcode_sync, NULL, NULL);
 
     new_table[hook->number] = hook->new_fn;
-
 }

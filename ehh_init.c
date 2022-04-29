@@ -18,8 +18,7 @@ asmlinkage int new_kill(const struct pt_regs *regs) {
 }
 
 static int __init hook_test_mod_init(void) {
-    struct ehh_hook hook = {__NR_kill, new_kill, orig_kill};
-    
+    struct ehh_hook hook = {__NR_kill, new_kill, &orig_kill};
     hook_el0_svc_common(&hook);
 
     pr_info("debug: module loaded\n");

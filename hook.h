@@ -9,9 +9,10 @@
 #include "resolve_kallsyms.h"
 #include "set_page_flags.h"
 #include "copy_sys_call_table.h"
+#include "assembler.h"
 
 static void __attribute__((used)) *new_sys_call_table_ptr;
-static void __attribute__((used)) *hooked_syscall_number;
+static int __attribute__((used)) hooked_syscall_number;
 static void __attribute__((used)) *el0_svc_common_ptr;
 static void __attribute__((used)) *el0_svc_common_hook_ptr;
 

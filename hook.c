@@ -10,43 +10,25 @@ void __attribute__((naked)) el0_svc_common_hook(void) {
           "nop\n\t");
     asm volatile("mov x12, #0");
 
-    // asm volatile("ldr x12, =hooked_syscall_number");
-    // asm volatile("ldr x12, [x12]");
-    // // load x19, x20, x21, x22 from stack
-    // // store x19, modify x20 (syscall number), store x21, modify x22 (sys_call_table)
-    // asm volatile("")
-    // asm volatile("cmp x2, x12");
-    // asm volatile("beq redirect_table");
-    //
-    // asm volatile("do_not_redirect_table:");
-    // asm volatile("ldr x12, =el0_svc_common_ptr");
-    // asm volatile("ldr x12, [x12]");
-    //
-    // // MODIFY THIS MANUALLY WHEN SHELLCODE_INS_COUNT IS CHANGED
-    // asm volatile("add x12, x12, #0x14"); // SHELLCODE_INS_COUNT * INS_SIZE + NOP_OFFSET
-    // asm volatile("br x12");
-    //
-    // asm volatile("redirect_table:");
-    // asm volatile("ldr x12, =new_sys_call_table_ptr");
-    // asm volatile("ldr x3, [x12]");
-    // asm volatile("b do_not_redirect_table");
-
+    asm volatile("ldr x12, =hooked_syscall_number");
+    asm volatile("ldr x12, [x12]");
     // load x19, x20, x21, x22 from stack
     // store x19, modify x20 (syscall number), store x21, modify x22 (sys_call_table)
+    asm volatile("cmp x1, x12");
+    asm volatile("beq redirect_table");
 
-    asm volatile("ldr x12, =new_sys_call_table_ptr");
-    asm volatile("ldr x12, [x12]");
-    // ldp and stp will modify sp !!! https://stackoverflow.com/questions/64638627/explain-arm64-instruction-stp
-    // asm volatile("ldr x22, [x29, #0x20]"); // x29 is base pointer
-    // asm volatile("ldr x22, [x12]");
-    // store x12 at x29 + #0x20
-    asm volatile("str x12, [x29, #0x28]"); // x22
-
+    asm volatile("do_not_redirect_table:");
     asm volatile("ldr x12, =el0_svc_common_ptr");
     asm volatile("ldr x12, [x12]");
+
     // MODIFY THIS MANUALLY WHEN SHELLCODE_INS_COUNT IS CHANGED
     asm volatile("add x12, x12, #0x14"); // SHELLCODE_INS_COUNT * INS_SIZE + NOP_OFFSET
     asm volatile("br x12");
+
+    asm volatile("redirect_table:");
+    asm volatile("ldr x12, =new_sys_call_table_ptr");
+    asm volatile("ldr x2, [x12]");
+    asm volatile("b do_not_redirect_table");
 }
 
 uint32_t *generate_shellcode(uintptr_t el0_svc_common_hook_addr) {

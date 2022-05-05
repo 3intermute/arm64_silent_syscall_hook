@@ -15,22 +15,22 @@ demonstration: asciinema.org/a/B3Ws8bYdg8kdSUftyJjuEZmEP
 system call hooking on linux is quite trivial. current common techniques include:
 - using the kernel ftrace api
 - modifying sys_call_table to point to your own table
-- modifying addresses in sys_call_table to point to point to your own code
+- modifying addresses in sys_call_table to point to your own code
 - patching the syscall entries themselves
 
-unfortunately, even usermode rootkit scanners can detect the first 2 methods-
+unfortunately, even userland rootkit scanners can detect the first 2 methods-
 via periodically checking /proc/kallsyms or system.map.
-current kernelmode rootkit scanners will easily detect all of these methods.
+current kernel mode rootkit scanners will easily detect all of these methods.
 
 rain king patches el0_svc_common, which is invoked by the exception handler on a svc
 el0_svc_common then redirects execution to the syscall entry via looking up its address in sys_call_table.
 
-rain king then checks the # of the syscall and redirects execution to two different tables,
+rain king then checks the # of the syscall and redirects execution to two different tables -
 depending on if the syscall # is marked as hooked.
-leaving sys_call_table, and the entries it points to, unmodified.
+this leaves the sys_call_table and the entries it points to unmodified.
 
-as far as i am aware, no current rootkit scanner will be able to detect this,
-however detection would be as simple as checksumm-ing el0_svc_common every now and then from, say, a trustzone driver.
+as far as i am aware, no current rootkit scanner currently detects this,
+although doing so could be as trivial as periodically comparing a checksum of the table to a base value, perhaps with a trustzone driver.
 
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -42,11 +42,11 @@ splicing a function entails:
 - compiling our "hook" (the function to be redirected to when the hook-ee executes)-
   with <trampoline size> nops
 - copying the first, <trampoline size> instructions of hook-ee to our hook
-- copying our trampoline to the hook-ee
+- copying our trampoline to the hooked function
 
 when the hook-ee is called, our trampoline will jump to our hook,
 the hook can now modify the arguments of the hook-ee.
-once the hook is finished, it will jump to the hook-ee + <trampoline size>.
+once the hook is finished, it will jump to the hooked function entry + <trampoline size>.
 
 {0.1.} layout of things post hook installation
             ---------------------------------
@@ -68,8 +68,8 @@ once the hook is finished, it will jump to the hook-ee + <trampoline size>.
             | ...                                 |   |
             | ------------------------------------|   |
             | 0x14 -------------------------------|   |
-            | mess with arguments                 | ---   <- check syscall #, set sys_call_table to malicious table if its a hooked syscall
-            | jump to el0_svc_common entry + 0x14 |
+            | mess with arguments                 |   |   <- check syscall #, set sys_call_table to malicious table if its a hooked syscall
+            | jump to el0_svc_common entry + 0x14 | ---
             ---------------------------------------
 
 >>note: as you will soon see, the trampoline will need to be 5 instructions long,
@@ -78,7 +78,7 @@ once the hook is finished, it will jump to the hook-ee + <trampoline size>.
         (which will mostly be saving callee-saved registers on the stack)
 
 {1.} ---- copying sys_call_table ----
-we will begin by vmalloc-ing (since sys_call_table can span multiple pages and must be page aligned) a new table,
+we will begin by calling vmalloc (since sys_call_table can span multiple pages and must be page aligned) on a new table,
 and copying the original table into it. this will be our "malicious" table that we will re-direct hooked syscalls to.
 
 >>note: see copy_sys_call_table.h
@@ -90,13 +90,13 @@ we will get the page table entry for both functions and then set the write bit i
     pte_flip_write_protect(page_from_virt(el0_svc_common_hook_ptr));
     pte_flip_write_protect(page_from_virt(el0_svc_common_ptr));
 
-once again, this simple enough with the wrappers i provided in set_page_flags.c.
+once again, this is simple enough with the wrappers i provided in set_page_flags.c.
 >>note: (see the notes on helpers section for details on how this works)
 
 {3.} ---- stop_machine ----
 to repeat the wise words of a friend,
 it would cause "horrific crashes" if an interrupt were to... interrupt our copying and execute el0_svc_common,
-or if we were to copy our trampoline while a CPU is mid-excution in el0_svc_common.
+or if we were to copy our trampoline while a CPU is mid-execution in el0_svc_common.
 to prevent this, we will use stop_machine. ill let the documentation speak for itself:
 
         * stop_machine: freeze the machine on all CPUs and run this function
@@ -124,6 +124,7 @@ well the only solution to this is to assemble the trampoline shellcode AT RUNTIM
 this is actually easier than it sounds.
 since instructions are 32 bits, loading a 64 bit address as an immediate is out of the question so we have two options:
 >>note:for the examples we are loading the address 0xffff12345678abcd into x0
+
     - copy the address with our shellcode and then do a pc-relative load (which i have not actually tested lol):
 
         ldr x0, =addr      ; load pointer to symbol addr
@@ -202,10 +203,10 @@ initially, i looked at the kernel source code:
     -----------------------------------------------------------------------------
 
     static void el0_svc_common(struct pt_regs *regs, int scno, int sc_nr,
-    			   const syscall_fn_t syscall_table[])
+                   const syscall_fn_t syscall_table[])
     {
         ...
-    	invoke_syscall(regs, scno, sc_nr, syscall_table);
+        invoke_syscall(regs, scno, sc_nr, syscall_table);
         ...
     }
 

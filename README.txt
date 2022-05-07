@@ -30,7 +30,7 @@ depending on if the syscall # is marked as hooked.
 this leaves the sys_call_table and the entries it points to unmodified.
 
 as far as i am aware, no current rootkit scanner currently detects this,
-although doing so could be as trivial as periodically comparing a checksum of the table to a base value, perhaps with a trustzone driver.
+although doing so could be as trivial as periodically comparing a checksum of the kernel code to a base value, perhaps with a trustzone driver.
 
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 

@@ -1,6 +1,7 @@
 #include "set_page_flags.h"
 
 pte_t *page_from_virt(uintptr_t addr) {
+    addr = ((unsigned long) addr & (getpagesize() - 1)) ?  (void *) (((unsigned long) addr + getpagesize()) & ~(getpagesize() - 1)) : addr;
     pr_info("debug: page_from_virt called with addr %pK\n", addr);
     if (!init_mm_ptr) {
         init_mm_ptr = kallsyms_lookup_name_("init_mm");
@@ -11,11 +12,13 @@ pte_t *page_from_virt(uintptr_t addr) {
     pud_t *pud;
     pmd_t *pmd;
     pte_t *ptep;
+    pte_t *pte;
 
     pgd = pgd_offset(init_mm_ptr, addr);
     if (pgd_none(*pgd) || pgd_bad(*pgd)) {
         return NULL;
     }
+    // return if pgd is entry is here
 
     p4d = p4d_offset(pgd, addr);
     if (p4d_none(*p4d) || p4d_bad(*p4d)) {

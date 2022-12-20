@@ -2,9 +2,9 @@
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <asm/unistd.h>
-#include "resolve_kallsyms.h"
-#include "copy_sys_call_table.h"
-#include "hook.h"
+#include "include/resolve_kallsyms.h"
+#include "include/copy_sys_call_table.h"
+#include "include/hook.h"
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("0xwillow");

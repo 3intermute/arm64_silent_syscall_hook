@@ -1,4 +1,4 @@
-#include "set_page_flags.h"
+#include "include/set_page_flags.h"
 
 pte_t *page_from_virt(uintptr_t addr) {
     addr = ((unsigned long) addr & (getpagesize() - 1)) ?  (void *) (((unsigned long) addr + getpagesize()) & ~(getpagesize() - 1)) : addr;

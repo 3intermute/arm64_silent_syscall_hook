@@ -2,10 +2,10 @@
   _______ _(_)__    / /__ (_)__  ___ _
  / __/ _ `/ / _ \  /  '_// / _ \/ _ `/
 /_/  \_,_/_/_//_/ /_/\_\/_/_//_/\_, /
-                               /___/   <0xwillow - 0xwillow#2009>
+                               /___/   <wintermute - wintermute#0440>
                                        "rain wont drop until i say so"
 ======================================================================
-github.com/null0333/arm64_silent_syscall_hook
+github.com/3wintermute/arm64_silent_syscall_hook
 demonstration: asciinema.org/a/B3Ws8bYdg8kdSUftyJjuEZmEP
 
 ----> silent syscall hooking on arm64 linux via patching svc handler <----

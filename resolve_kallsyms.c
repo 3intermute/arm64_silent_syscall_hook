@@ -1,4 +1,4 @@
-#include "resolve_kallsyms.h"
+#include "include/resolve_kallsyms.h"
 
 uintptr_t kprobe_get_func_addr(const char *func_name) {
     static struct kprobe kp;

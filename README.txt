@@ -8,6 +8,8 @@
 github.com/3wintermute/arm64_silent_syscall_hook
 demonstration: asciinema.org/a/B3Ws8bYdg8kdSUftyJjuEZmEP
 
+featured on tmp.0ut vol3: https://tmpout.sh/3/
+
 ----> silent syscall hooking on arm64 linux via patching svc handler <----
 
 
